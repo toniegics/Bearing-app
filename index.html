@@ -40,7 +40,7 @@ nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-w
 nav button{flex:1;background:none;border:0;color:var(--mute);font:inherit;font-size:11px;padding:4px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
 nav button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:var(--acc);font-weight:600}
-input[type=search],input[type=text],textarea{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:10px 12px;font:inherit}
+input[type=search],input[type=text],input[type=password],textarea{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:10px 12px;font:inherit}
 .bar{height:26px;border-radius:6px;background:var(--tealBg);position:relative;overflow:hidden;margin-top:6px;cursor:pointer}
 .bar i{position:absolute;inset:0 auto 0 0;background:var(--teal);opacity:.35}
 .bar span{position:relative;display:flex;justify-content:space-between;padding:3px 10px;font-size:13px}
@@ -57,6 +57,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 <body>
 <div id="app"></div>
 <div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const ICON={
@@ -119,13 +120,13 @@ function feed(){
  list.sort((a,b)=>b.topics.filter(t=>S.follow.has(t)).length-a.topics.filter(t=>S.follow.has(t)).length);
  return hdr('Bearing','What is happening in geospatial today')+
  chips(TOPICS,S.topic,'setTopic')+
- `<div class="wrap">${S.topic==='All'?THREADS.filter(t=>isLive(t)&&t.imgs&&t.imgs.length).map(commCard).join(''):''}${list.map(n=>{
+ `<div class="wrap">${list.map(n=>{
   const mine=n.topics.filter(t=>S.follow.has(t))[0];
   const body=`<div class="meta">${n.sp?'<span class="tag spons">Sponsored</span>':`<span class="tag">${n.t}</span>`}${n.src} · ${n.time}${mine&&!n.sp?' · because you follow '+mine:''}</div><h3>${n.title}</h3>${gal(n.imgs)}${n.imgs?`<div class="meta" style="margin-top:4px">Image: ${n.src}</div>`:''}`;
-  const ai=n.ai&&S.open.has(n.id)?`<dl class="ai"><dt>What happened</dt><dd>${n.ai.what}</dd><dt>Why it matters</dt><dd>${n.ai.why}</dd><dt>Who is affected</dt><dd>${n.ai.who}</dd><dt>When it takes effect</dt><dd>${n.ai.when}</dd><dt>Original source</dt><dd>${n.src} (link)</dd></dl><div class="meta" style="margin-top:6px">AI summary. Check the original source before acting.</div>`:'';
-  const act=`<div class="row"><span>${n.ai?`<button class="btn ${S.open.has(n.id)?'on':''}" onclick="save('open',${n.id})">${S.open.has(n.id)?'Hide summary':'AI summary'}</button>`:''}</span><button class="btn ${S.saved.has('n'+n.id)?'on':''}" onclick="save('saved','n${n.id}')">${S.saved.has('n'+n.id)?'Saved':'Save'}</button></div>`;
-  const a=n.alert?`<div class="alert"><b>Industry alert</b><p>${n.title}</p><div class="row"><span class="meta" style="color:inherit">${n.src} · ${n.time}</span><button class="btn" style="color:#fff;border-color:#fff" onclick="save('open',${n.id})">${S.open.has(n.id)?'Hide':'Read summary'}</button></div></div>`:'';
-  return a+`<div class="card">${body}${ai}${act}</div>`}).join('')||'<p class="meta">Nothing here yet. Follow more topics in your profile.</p>'}</div>`;
+  const ai=n.ai&&S.open.has(n.id)?`<dl class="ai"><dt>What happened</dt><dd>${n.ai.what}</dd><dt>Why it matters</dt><dd>${n.ai.why}</dd><dt>Who is affected</dt><dd>${n.ai.who}</dd><dt>When it takes effect</dt><dd>${n.ai.when}</dd><dt>Original source</dt><dd><a href="${n.url}" target="_blank" rel="noopener noreferrer">${n.src}</a></dd></dl><div class="meta" style="margin-top:6px">AI summary. Check the original source before acting.</div>`:'';
+  const act=`<div class="row"><span>${n.ai?`<button class="btn ${S.open.has(n.id)?'on':''}" onclick="save('open','${n.id}')">${S.open.has(n.id)?'Hide summary':'AI summary'}</button>`:''}</span><button class="btn ${S.saved.has('n'+n.id)?'on':''}" onclick="save('saved','n${n.id}')">${S.saved.has('n'+n.id)?'Saved':'Save'}</button></div>`;
+  const a=n.alert?`<div class="alert"><b>Industry alert</b><p>${n.title}</p><div class="row"><span class="meta" style="color:inherit">${n.src} · ${n.time}</span><button class="btn" style="color:#fff;border-color:#fff" onclick="save('open','${n.id}')">${S.open.has(n.id)?'Hide':'Read summary'}</button></div></div>`:'';
+  return a+`<div class="card">${body}${ai}${act}</div>`}).join('')||'<p class="meta">No stories yet. Editors publish new stories here.</p>'}</div>`;
 }
 function market(){
  const cats=['Jobs','Equipment','Hire','Software','Services','Training','Tenders'];
@@ -162,7 +163,7 @@ function profile(){
  <div class="card"><h3>Your feed learns from</h3><p class="meta">Profession, location, followed topics, what you read and save, and your community activity.</p></div>
  <h2>Saved (${sv.length})</h2>${sv.map(s=>`<div class="card" style="padding:10px 14px">${s}</div>`).join('')||'<p class="meta">Nothing saved yet. Tap Save on any article, job, event or document.</p>'}
  <h2 style="margin-top:16px">Registered events (${S.reg.size})</h2>${[...S.reg].map(i=>`<div class="card" style="padding:10px 14px">${EVENTS[i].title}</div>`).join('')||'<p class="meta">No registrations yet.</p>'}
- <h2 style="margin-top:16px">Profile</h2><div class="card"><label class="meta">Discipline</label><input type="text" value="${p.role}" onchange="S.profile.role=this.value;render()"><label class="meta" style="display:block;margin-top:8px">Location</label><input type="text" value="${p.loc}" onchange="S.profile.loc=this.value;render()"></div></div>`;
+ <h2 style="margin-top:16px">Profile</h2><div class="card"><label class="meta">Discipline</label><input type="text" value="${p.role}" onchange="saveProf('role',this.value)"><label class="meta" style="display:block;margin-top:8px">Location</label><input type="text" value="${p.loc}" onchange="saveProf('location',this.value)"></div></div>`;
 }
 const setTopic=t=>{S.topic=t;render()},setCat=c=>{S.cat=c;render()},setCC=c=>{S.ccat=c;render()};
 const fol=t=>{save('follow',t)};
@@ -179,7 +180,7 @@ const cl=s=>s.replace(/[<>"'`\\]/g,'');
 const isLive=t=>(t.st||'live')==='live';
 const vis=t=>isLive(t)||t.mine;
 const mvis=j=>(j.st||'live')==='live'||j.mine;
-const trusted=()=>S.approved>=2;
+const trusted=()=>!!(S.prof&&S.prof.approved_posts>=2);
 const REASONS=['Spam or promotion','Abusive or harassing','Confidential client or site information','Copyright','Misleading or wrong','Scam or fake listing'];
 function enqueue(k,ref,why){S.queue.push({id:++qid,k,ref,why})}
 function screen(v){if(/https?:|www\.|bit\.ly/i.test(v))return 'Auto-flagged: contains a link';if(/whatsapp|telegram|dm me|free money|buy now/i.test(v))return 'Auto-flagged: off-platform contact or promotion';if(/idiot|stupid|scam artist|moron/i.test(v))return 'Auto-flagged: possible abuse';return ''}
@@ -214,14 +215,41 @@ function dec(id,a){const it=S.queue.find(x=>String(x.id)===id);if(!it)return;con
 function modq(){return `<h2>Moderation queue (${S.queue.length})</h2>${S.queue.map(it=>{const o=it.k==='post'?THREADS.find(t=>t.id===it.ref):JOBS.find(j=>j.id===it.ref);if(!o)return'';
  const ok=it.why.startsWith('Reported')?'Keep':it.why.startsWith('Appeal')?'Restore':'Approve';const n=o.imgs&&o.imgs.length?` · ${o.imgs.length} photo(s)`:'';
  return `<div class="card"><div class="meta"><span class="tag">${it.k==='post'?'Post':'Listing'}</span>${it.why}</div><h3>${it.k==='post'?o.q:o.title}</h3><div class="meta">${o.by}${n}</div><div class="row"><span></span><span><button class="btn pri" onclick="dec('${it.id}','ok')">${ok}</button> <button class="btn" onclick="dec('${it.id}','rm')">Remove</button></span></div></div>`}).join('')||'<p class="meta">Queue is clear.</p>'}`}
-const DRAFTS=[
-{id:101,t:'Regulation',topics:['NSW Surveying','Regulation'],src:'Government notice',rights:'Open licence',title:'Updated guidance released on protecting survey marks during construction',ai:{what:'New guidance sets out how contractors must protect permanent survey marks on worksites.',why:'Disturbed marks can invalidate later survey work.',who:'Contractors, surveyors and councils.',when:'Effective on publication.'}},
-{id:102,t:'GNSS',topics:['GNSS','Software'],src:'Industry publication',rights:'Link only, own words',title:'Network RTK provider extends coverage to more regional areas',ai:{what:'A network provider has added reference stations in regional areas.',why:'Better corrections for rural fieldwork.',who:'Surveyors working outside metro areas.',when:'Rolling out over the coming months.'}}];
-S.dr=DRAFTS;S.ck={};
-function edDesk(){return `<h2>Editor desk (${S.dr.length})</h2><p class="meta" style="margin-bottom:8px">AI-drafted stories wait here. Nothing reaches the Feed until you approve it.</p>${S.dr.map(d=>`<div class="card"><div class="meta"><span class="tag">AI draft</span><span class="tag spons">${d.rights}</span>${d.src}</div><h3>${d.title}</h3><label class="meta">What happened (edit if needed)</label><textarea id="ed${d.id}" rows="3">${d.ai.what}</textarea><label class="meta" style="display:block;margin-top:8px"><input type="checkbox" ${S.ck[d.id+'a']?'checked':''} onchange="S.ck['${d.id}a']=this.checked"> Checked against the original source</label><label class="meta" style="display:block"><input type="checkbox" ${S.ck[d.id+'b']?'checked':''} onchange="S.ck['${d.id}b']=this.checked"> Written in our own words, link included</label><div class="row"><span></span><span><button class="btn pri" onclick="edOk(${d.id})">Approve and publish</button> <button class="btn" onclick="edNo(${d.id})">Reject</button></span></div></div>`).join('')||'<p class="meta">No drafts waiting.</p>'}`}
-function edOk(id){if(!S.ck[id+'a']||!S.ck[id+'b']){toast('Tick both checks first');return}const d=S.dr.find(x=>x.id===id);d.ai.what=$('#ed'+id).value.replace(/[<>]/g,'').trim()||d.ai.what;NEWS.unshift({id:d.id,t:d.t,topics:d.topics,src:d.src,time:'Just now',title:d.title,ai:d.ai});S.dr=S.dr.filter(x=>x.id!==id);render();toast('Published to the Feed')}
-function edNo(id){S.dr=S.dr.filter(x=>x.id!==id);render();toast('Draft rejected')}
-function trust(){return `<div class="card"><h3>Account trust</h3><p class="meta">${trusted()?'Trusted member: posts go live straight away unless automatically flagged.':`New member: your first posts are checked before they go live (${S.approved} of 2 approved).`}</p><div class="row"><span class="meta">Demo: act as editor and moderator</span><button class="btn ${S.mod?'on':''}" onclick="S.mod=!S.mod;render()">${S.mod?'Editor view on':'Turn on editor view'}</button></div></div>${S.mod?edDesk()+modq():''}`}
+const SB_URL='https://ewpasqhtifyyyvongcjb.supabase.co',SB_KEY='sb_publishable_3yDdKCD0Sy9qhAcCw1fZug_TJU_XIK_';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const okUrl=u=>/^https?:\/\//.test(u||'')?esc(u):'#';
+const isEd=()=>['editor','admin'].includes(S.prof&&S.prof.role);
+const ago=d=>{const m=Math.round((Date.now()-new Date(d))/6e4);return m<60?Math.max(m,1)+'m':m<1440?Math.round(m/60)+'h':Math.round(m/1440)+'d'};
+S.user=null;S.prof=null;S.mode='login';S.msg='';S.em='';S.ready=false;S.drafts=[];S.ck={};
+const mapArt=a=>({id:a.id,t:esc(a.category||'News'),topics:a.topics||[],src:esc(a.source_name),url:okUrl(a.source_url),time:a.published_at?ago(a.published_at):'',title:esc(a.title),alert:a.is_alert,sp:a.is_sponsored,ai:{what:esc(a.summary&&a.summary.what),why:esc(a.summary&&a.summary.why),who:esc(a.summary&&a.summary.who),when:esc(a.summary&&a.summary.when)}});
+async function loadArticles(){const{data,error}=await sb.from('articles').select('*').eq('status','published').order('published_at',{ascending:false}).limit(50);if(error){toast('Could not load news');return}NEWS.length=0;data.forEach(a=>NEWS.push(mapArt(a)))}
+async function loadDrafts(){if(!isEd())return;const{data}=await sb.from('articles').select('*').eq('status','draft').order('created_at',{ascending:false});S.drafts=data||[]}
+async function loadProfile(){const{data}=await sb.from('profiles').select('*').eq('id',S.user.id).single();if(data){S.prof=data;S.profile={name:esc(data.display_name),role:esc(data.discipline||'Professional'),loc:esc(data.location||'Australia')}}}
+async function enter(){await loadProfile();await Promise.all([loadArticles(),loadDrafts()])}
+async function boot(){const{data:{session}}=await sb.auth.getSession();S.user=session?session.user:null;if(S.user)await enter();S.ready=true;render();
+ sb.auth.onAuthStateChange(async(ev,ses)=>{const u=ses?ses.user:null;if(ev==='SIGNED_IN'&&u&&!S.user){S.user=u;await enter();render()}if(ev==='SIGNED_OUT'){S.user=null;S.prof=null;render()}})}
+async function auth(){const e=$('#em').value.trim(),p=$('#pw').value;S.msg='';S.em=e;
+ if(!e||p.length<8){S.msg='Enter your email and a password of at least 8 characters.';render();return}
+ if(S.mode==='signup'){const n=cl($('#dn').value.trim());if(!n){S.msg='Enter your name.';render();return}if(!$('#tos').checked){S.msg='Please accept the Terms of Use.';render();return}
+  const{data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{display_name:n},emailRedirectTo:location.origin+location.pathname}});
+  if(error)S.msg=error.message;else if(!data.session){S.msg='Check your email to confirm your account, then log in.';S.mode='login'}}
+ else{const{error}=await sb.auth.signInWithPassword({email:e,password:p});if(error)S.msg=error.message}
+ render()}
+const logout=async()=>{await sb.auth.signOut()};
+function authView(){const su=S.mode==='signup';return hdr('Bearing','Sign in to the geospatial community')+`<div class="wrap"><div class="card"><h3>${su?'Create your account':'Log in'}</h3>${su?'<input type="text" id="dn" placeholder="Your name" style="margin-top:8px">':''}<input type="text" id="em" placeholder="Email" value="${esc(S.em)}" autocomplete="email" style="margin-top:8px"><input type="password" id="pw" placeholder="Password (8+ characters)" autocomplete="${su?'new-password':'current-password'}" style="margin-top:8px">${su?'<label class="meta" style="display:block;margin-top:8px"><input type="checkbox" id="tos"> I agree to the <a href="https://github.com/toniegics/Bearing-app/blob/main/TERMS_OF_USE.md" target="_blank" rel="noopener noreferrer">Terms of Use</a></label>':''}${S.msg?`<p class="meta" style="margin-top:8px;color:var(--acc)">${esc(S.msg)}</p>`:''}<div class="row"><button class="btn" onclick="S.mode='${su?'login':'signup'}';S.msg='';render()">${su?'I have an account':'Create account'}</button><button class="btn pri" onclick="auth()">${su?'Sign up':'Log in'}</button></div></div></div>`}
+const draftCard=d=>`<div class="card"><div class="meta"><span class="tag">Draft</span><span class="tag spons">${esc(d.rights_status)}</span>${esc(d.source_name)}</div><h3>${esc(d.title)}</h3><label class="meta">What happened (edit if needed)</label><textarea id="ed${d.id}" rows="3">${esc(d.summary&&d.summary.what)}</textarea><div class="meta" style="margin-top:6px">Why: ${esc(d.summary&&d.summary.why)}<br>Who: ${esc(d.summary&&d.summary.who)}<br>When: ${esc(d.summary&&d.summary.when)}</div><div class="meta" style="margin-top:6px"><a href="${okUrl(d.source_url)}" target="_blank" rel="noopener noreferrer">Open the original to check it</a></div><label class="meta" style="display:block;margin-top:8px"><input type="checkbox" ${S.ck[d.id+'a']?'checked':''} onchange="S.ck['${d.id}a']=this.checked"> Checked against the original source</label><label class="meta" style="display:block"><input type="checkbox" ${S.ck[d.id+'b']?'checked':''} onchange="S.ck['${d.id}b']=this.checked"> Written in our own words, link included</label><div class="row"><span></span><span><button class="btn pri" onclick="edOk('${d.id}')">Approve and publish</button> <button class="btn" onclick="edNo('${d.id}')">Reject</button></span></div></div>`;
+function edDesk(){const f=S.drafts,m='style="margin-top:8px"';return `<h2>Editor desk (${f.length})</h2><details class="card"><summary><b>New story draft</b></summary><input type="text" id="nt" placeholder="Headline (your own wording)" ${m}><input type="text" id="ns" placeholder="Source name, e.g. Spatial Services NSW" ${m}><input type="text" id="nu" placeholder="Link to the original (https://...)" ${m}><input type="text" id="nc" placeholder="Category, e.g. Regulation" ${m}><input type="text" id="ntp" placeholder="Topics, comma separated: NSW Surveying, GNSS" ${m}><textarea id="nw" rows="2" placeholder="What happened?" ${m}></textarea><textarea id="ny" rows="2" placeholder="Why does it matter?" ${m}></textarea><input type="text" id="nh" placeholder="Who is affected?" ${m}><input type="text" id="nn" placeholder="When does it take effect?" ${m}><select id="nr" ${m} style="margin-top:8px;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit"><option value="link_only">Rights: link only, own words</option><option value="open_licence">Rights: open licence</option><option value="permission">Rights: permission granted</option><option value="licensed">Rights: licensed</option></select><label class="meta" style="display:block;margin-top:8px"><input type="checkbox" id="na"> Mark as industry alert</label><div class="row"><span></span><button class="btn pri" onclick="addDraft()">Save draft</button></div></details>${f.map(draftCard).join('')||'<p class="meta">No drafts waiting.</p>'}`}
+async function addDraft(){const g=i=>$('#'+i).value.trim(),url=g('nu');
+ if(!g('nt')||!g('ns')||!/^https?:\/\//.test(url)||!g('nw')){toast('Headline, source, an https:// link and "what happened" are required');return}
+ const{error}=await sb.from('articles').insert({title:g('nt'),source_name:g('ns'),source_url:url,category:g('nc')||null,topics:g('ntp').split(',').map(x=>x.trim()).filter(Boolean),summary:{what:g('nw'),why:g('ny'),who:g('nh'),when:g('nn')},rights_status:g('nr'),is_alert:$('#na').checked});
+ if(error){toast(error.message);return}await loadDrafts();render();toast('Draft saved')}
+async function edOk(id){if(!S.ck[id+'a']||!S.ck[id+'b']){toast('Tick both checks first');return}const d=S.drafts.find(x=>x.id===id),what=$('#ed'+id).value.trim()||d.summary.what;
+ const{error}=await sb.from('articles').update({status:'published',checked_source:true,own_words:true,summary:{...d.summary,what}}).eq('id',id);
+ if(error){toast(error.message);return}await Promise.all([loadArticles(),loadDrafts()]);render();toast('Published to the Feed')}
+async function edNo(id){const{error}=await sb.from('articles').update({status:'rejected'}).eq('id',id);if(error){toast(error.message);return}await loadDrafts();render();toast('Draft rejected')}
+async function saveProf(k,v){S.profile[k]=esc(cl(v));await sb.from('profiles').update({[k==='role'?'discipline':'location']:cl(v)}).eq('id',S.user.id);render()}
+function trust(){const r=(S.prof&&S.prof.role)||'member';return `<div class="card"><h3>Account</h3><p class="meta">${esc(S.user.email)} · ${esc(r)}</p><div class="row"><span class="meta">${trusted()?'Trusted member':'New member: first posts are checked ('+((S.prof&&S.prof.approved_posts)||0)+' of 2 approved).'}</span><button class="btn" onclick="logout()">Log out</button></div></div>${isEd()?edDesk():''}`}
 function pick(inp){const fs=[...inp.files].slice(0,4-S.imgs.length);inp.value='';if(!fs.length){toast('Maximum 4 photos per post');return}
  Promise.all(fs.map(f=>new Promise(res=>{if(!f.type.startsWith('image/'))return res(null);const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,1200/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.82))};im.onerror=()=>res(null);im.src=r.result};r.onerror=()=>res(null);r.readAsDataURL(f)}))).then(u=>{const ok=u.filter(Boolean);if(ok.length<u.length)toast('Some files were not images');S.imgs=S.imgs.concat(ok).slice(0,4);render()})}
 function ask(){S.q=$('#rq').value;const q=S.q.toLowerCase();
@@ -230,11 +258,11 @@ function ask(){S.q=$('#rq').value;const q=S.q.toLowerCase();
 const V={feed,market,community,events,resources,profile};
 function render(){
  const y=window.scrollY;
- $('#app').innerHTML=V[S.tab]()+`<nav>${TABS.map(([k,l])=>`<button class="${S.tab===k?'on':''}" onclick="go('${k}')" aria-label="${l}"><svg viewBox="0 0 24 24">${ICON[k]}</svg>${l}</button>`).join('')}</nav>${sheet()}`;
+ if(!S.ready){$('#app').innerHTML='<p class="meta" style="padding:24px">Loading...</p>';return}if(!S.user){$('#app').innerHTML=authView();return}$('#app').innerHTML=(['community','market','events','resources'].includes(S.tab)?'<div style="background:var(--hdr);color:#eef2f1;font-size:12px;text-align:center;padding:6px 12px">Sample content while this section is being connected</div>':'')+V[S.tab]()+`<nav>${TABS.map(([k,l])=>`<button class="${S.tab===k?'on':''}" onclick="go('${k}')" aria-label="${l}"><svg viewBox="0 0 24 24">${ICON[k]}</svg>${l}</button>`).join('')}</nav>${sheet()}`;
  window.scrollTo(0,y);
 }
 function go(t){S.tab=t;render();window.scrollTo(0,0)}
-render();
+render();boot();
 </script>
 </body>
 </html>
