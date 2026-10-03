@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bearing – geospatial industry app</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#eef2f1;--card:#fff;--ink:#12292e;--mute:#5d7175;--line:#d5dedd;--acc:#f2542d;--accInk:#fff;--teal:#0f6b73;--tealBg:#dcedee;--hdr:#12292e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1b1e;--card:#15292d;--ink:#e6efee;--mute:#93a9ac;--line:#25403f;--tealBg:#173c40;--teal:#5cc3cb;--hdr:#1c4148}}
+:root[data-theme="dark"]{--bg:#0d1b1e;--card:#15292d;--ink:#e6efee;--mute:#93a9ac;--line:#25403f;--tealBg:#173c40;--teal:#5cc3cb;--hdr:#1c4148}
+*{box-sizing:border-box;margin:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Instrument Sans",system-ui,sans-serif;display:flex;justify-content:center}
+#app{width:100%;max-width:480px;min-height:100vh;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+h1,h2,h3,.disp{font-family:"Bricolage Grotesque",system-ui,sans-serif;letter-spacing:-.01em}
+header{padding:18px 16px 12px;background:var(--hdr);color:#eef2f1;position:relative;overflow:hidden}
+header svg{position:absolute;right:-40px;top:-30px;opacity:.16}
+header h1{font-size:28px;font-weight:800;position:relative;color:#fff}
+header p{font-size:13px;opacity:.75;position:relative}
+.wrap{padding:14px 16px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px;scrollbar-width:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:6px 13px;font:inherit;font-size:13px;cursor:pointer}
+.chip.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.card h3{font-size:17px;line-height:1.25;margin:4px 0 6px}
+.meta{font-size:12px;color:var(--mute)}
+.tag{display:inline-block;font-size:12px;font-weight:600;color:var(--teal);background:var(--tealBg);border-radius:4px;padding:1px 7px;margin-right:6px}
+.spons{color:var(--mute);background:transparent;border:1px dashed var(--mute)}
+.alert{background:var(--acc);color:var(--accInk);border-radius:10px;padding:14px;margin-bottom:12px}
+.alert b{font-family:"Bricolage Grotesque";font-size:16px}
+.alert p{font-size:14px;margin-top:4px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:10px}
+.btn{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--accInk);font-weight:600}
+.btn.on{background:var(--tealBg);border-color:var(--teal);color:var(--teal)}
+.ai{margin-top:10px;border-left:3px solid var(--teal);background:var(--tealBg);border-radius:0 8px 8px 0;padding:10px 12px;font-size:14px}
+.ai dt{font-weight:600;font-size:13px;margin-top:6px}.ai dt:first-child{margin-top:0}.ai dd{margin:0}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;background:none;border:0;color:var(--mute);font:inherit;font-size:11px;padding:4px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--acc);font-weight:600}
+input[type=search],input[type=text],textarea{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:10px 12px;font:inherit}
+.bar{height:26px;border-radius:6px;background:var(--tealBg);position:relative;overflow:hidden;margin-top:6px;cursor:pointer}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--teal);opacity:.35}
+.bar span{position:relative;display:flex;justify-content:space-between;padding:3px 10px;font-size:13px}
+.date{float:left;width:52px;text-align:center;margin-right:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.date b{display:block;background:var(--hdr);color:#eef2f1;font-size:11px;padding:1px 0}.date span{display:block;font:800 22px "Bricolage Grotesque";padding:2px 0}
+.clr{clear:both}
+h2{font-size:20px;margin:6px 0 10px}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center}.sheet{background:var(--card);width:100%;max-width:480px;border-radius:14px 14px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:99px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+const ICON={
+feed:'<path d="M4 5h16M4 10h10M4 15h16M4 20h8"/>',
+market:'<path d="M3 9l2-5h14l2 5M4 9v11h16V9M9 20v-6h6v6"/>',
+community:'<path d="M4 5h16v11H9l-5 4z"/>',
+events:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+resources:'<path d="M5 4h10a4 4 0 014 4v12H9a4 4 0 01-4-4z"/><path d="M9 9h6"/>',
+profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 5-6 8-6s7 1 8 6"/>'};
+const TABS=[['feed','Feed'],['market','Market'],['community','Community'],['events','Events'],['resources','Library'],['profile','Profile']];
+
+const TOPICS=['NSW Surveying','GNSS','Construction','GIS','AI & automation','Regulation','Drones & LiDAR','Software','Careers'];
+const NEWS=[
+{id:1,t:'Regulation',topics:['NSW Surveying','Regulation'],src:'Spatial Services NSW',time:'2h',title:'Updated requirements for deposited plan lodgement announced',ai:{what:'NSW has revised digital lodgement requirements for deposited plans, including new metadata fields.',why:'Plans that omit the new fields will be rejected at lodgement.',who:'Registered land surveyors and drafting staff in NSW.',when:'Takes effect 1 December 2026.'},alert:true},
+{id:2,t:'GNSS',topics:['GNSS','Construction'],src:'Trimble',time:'5h',title:'Trimble releases firmware update for R-series receivers with improved multipath handling',imgs:[ph('#2b4a52','Receiver in the field'),ph('#0f6b73','Signal plot')],ai:{what:'New firmware adds better signal filtering in urban canyons.',why:'Fewer fixed-solution drop-outs on city construction sites.',who:'Owners of R-series GNSS receivers.',when:'Available now via the manufacturer portal.'}},
+{id:3,t:'AI & automation',topics:['AI & automation','GIS'],src:'Industry commentary',time:'8h',title:'Automated feature extraction from LiDAR is moving from pilot to production',imgs:[ph('#f2542d','Classified point cloud')],ai:{what:'Several firms now run automated classification in daily workflows.',why:'Point-cloud processing time is dropping sharply.',who:'LiDAR and photogrammetry teams.',when:'Trend ongoing.'}},
+{id:4,t:'Sponsored',sp:1,topics:['Drones & LiDAR'],src:'SkyGrid Drones',time:'Promoted',title:'See the new survey-grade drone with 3 cm accuracy and no ground control',ai:null},
+{id:5,t:'Software',topics:['Software','GIS'],src:'Open-source GIS',time:'1d',title:'QGIS long-term release adds faster raster rendering and improved 3D views',ai:{what:'The latest release improves rendering speed on large rasters.',why:'Smoother workflows for big imagery datasets.',who:'GIS analysts using QGIS.',when:'Available now.'}},
+{id:6,t:'Construction',topics:['Construction','NSW Surveying'],src:'Infrastructure news',time:'1d',title:'Major Sydney infrastructure package opens survey and monitoring tenders',imgs:[ph('#0f6b73','Corridor site'),ph('#2b4a52','Site plan'),ph('#f2542d','Monitoring points')],ai:{what:'New tenders released for control surveys and deformation monitoring.',why:'Large pipeline of work for consultancies.',who:'Survey firms and monitoring specialists.',when:'Tenders close in 5 weeks.'}},
+{id:7,t:'Careers',topics:['Careers'],src:'Community activity',time:'2d',title:'Graduate surveyor intake numbers rise for the second consecutive year',ai:null}];
+const JOBS=[
+{c:'Jobs',title:'Registered Surveyor – Cadastral',by:'Harbour Survey Group',loc:'Sydney NSW',tag:'Permanent',feat:1},
+{c:'Jobs',title:'GIS Analyst',by:'Coastal Council',loc:'Newcastle NSW',tag:'Contract'},
+{c:'Jobs',title:'Graduate Surveyor',by:'Terra Consulting',loc:'Parramatta NSW',tag:'Graduate'},
+{c:'Equipment',title:'Robotic total station, 1" (used)',by:'SurveyTrade',loc:'Wollongong NSW',tag:'$8,400',feat:1},
+{c:'Equipment',title:'GNSS rover kit with controller',by:'Dealer Direct',loc:'Brisbane QLD',tag:'$14,900'},
+{c:'Hire',title:'Laser scanner – daily hire',by:'ScanHire AU',loc:'Sydney NSW',tag:'$450/day'},
+{c:'Software',title:'Point cloud processing – annual licence',by:'CloudPoint',loc:'Online',tag:'Trial available'},
+{c:'Services',title:'Drone LiDAR capture and processing',by:'AirMap Services',loc:'NSW wide',tag:'Quote'},
+{c:'Training',title:'CPD: Digital cadastre workshop',by:'Institution of Surveyors',loc:'Online',tag:'6 CPD pts'},
+{c:'Tenders',title:'Control survey for rail corridor upgrade',by:'State agency',loc:'NSW',tag:'Closes 3 Nov'}];
+const THREADS=[
+{id:1,cat:'Software',q:'12d vs Civil 3D – what does your company actually use?',by:'M. Nguyen · Surveyor',votes:24,replies:31},
+{id:2,cat:'AI',q:'How are people using AI in their surveying workflows?',by:'K. Patel · GIS analyst',votes:41,replies:56},
+{id:3,cat:'Equipment',q:'Has anyone used the latest Trimble scanner on a live site?',by:'J. Smith · Construction surveyor',votes:12,replies:9,imgs:[ph('#0f6b73','Scan view 1'),ph('#f2542d','Scan view 2'),ph('#2b4a52','Site photo')]},
+{id:4,cat:'Surveying',q:'How are other firms handling the new NSW lodgement requirement?',by:'R. Evans · Registered surveyor',votes:33,replies:18}];
+let poll={q:'Which CAD platform does your company primarily use?',o:[['Civil 3D',48],['12d Model',31],['Other',21]],voted:-1};
+const EVENTS=[
+{d:'14',m:'OCT',title:'Sydney Geospatial Technology Conference',type:'Conference',loc:'Sydney',feat:1},
+{d:'21',m:'OCT',title:'Webinar: Getting the most from GNSS corrections',type:'Webinar',loc:'Online'},
+{d:'05',m:'NOV',title:'CPD Day: Cadastral law update',type:'CPD',loc:'Parramatta'},
+{d:'19',m:'NOV',title:'Graduate networking night',type:'Networking',loc:'Sydney'}];
+const DOCS=[
+{t:'Survey practice guidance for cadastral plans',k:'Regulation',src:'Government publication',sec:'Sections 4 and 7'},
+{t:'GNSS RTK field procedures',k:'Technical guide',src:'Industry guide',sec:'Chapter 3'},
+{t:'Standard for control surveys',k:'Standard',src:'Surveying standard',sec:'Part 2'},
+{t:'Deposited plan checklist template',k:'Template',src:'Template',sec:'Full document'},
+{t:'LiDAR classification tutorial',k:'Tutorial',src:'Tutorial',sec:'Steps 1 to 6'}];
+
+const S={tab:'feed',topic:'All',cat:'All',ccat:'All',follow:new Set(['NSW Surveying','GNSS','Construction']),saved:new Set(),open:new Set(),reg:new Set(),up:new Set(),q:'',ans:null,profile:{name:'Alex Morgan',role:'Surveyor',loc:'NSW'}};
+const save=(k,v)=>{S[k].has(v)?S[k].delete(v):S[k].add(v);render()};
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1400)}
+
+const hdr=(t,s)=>`<header><svg width="260" height="260" viewBox="0 0 260 260" fill="none" stroke="#fff" stroke-width="1.5"><circle cx="130" cy="130" r="30"/><circle cx="130" cy="130" r="55"/><ellipse cx="130" cy="130" rx="85" ry="70"/><ellipse cx="130" cy="130" rx="115" ry="95"/></svg><h1>${t}</h1><p>${s}</p></header>`;
+const chips=(list,cur,fn)=>`<div class="chips">${['All',...list].map(x=>`<button class="chip ${cur===x?'on':''}" onclick="${fn}('${x}')">${x}</button>`).join('')}</div>`;
+
+function feed(){
+ const list=NEWS.filter(n=>S.topic==='All'?true:n.topics.includes(S.topic));
+ // personalise: followed topics first
+ list.sort((a,b)=>b.topics.filter(t=>S.follow.has(t)).length-a.topics.filter(t=>S.follow.has(t)).length);
+ return hdr('Bearing','What is happening in geospatial today')+
+ chips(TOPICS,S.topic,'setTopic')+
+ `<div class="wrap">${S.topic==='All'?THREADS.filter(t=>isLive(t)&&t.imgs&&t.imgs.length).map(commCard).join(''):''}${list.map(n=>{
+  const mine=n.topics.filter(t=>S.follow.has(t))[0];
+  const body=`<div class="meta">${n.sp?'<span class="tag spons">Sponsored</span>':`<span class="tag">${n.t}</span>`}${n.src} · ${n.time}${mine&&!n.sp?' · because you follow '+mine:''}</div><h3>${n.title}</h3>${gal(n.imgs)}${n.imgs?`<div class="meta" style="margin-top:4px">Image: ${n.src}</div>`:''}`;
+  const ai=n.ai&&S.open.has(n.id)?`<dl class="ai"><dt>What happened</dt><dd>${n.ai.what}</dd><dt>Why it matters</dt><dd>${n.ai.why}</dd><dt>Who is affected</dt><dd>${n.ai.who}</dd><dt>When it takes effect</dt><dd>${n.ai.when}</dd><dt>Original source</dt><dd>${n.src} (link)</dd></dl><div class="meta" style="margin-top:6px">AI summary. Check the original source before acting.</div>`:'';
+  const act=`<div class="row"><span>${n.ai?`<button class="btn ${S.open.has(n.id)?'on':''}" onclick="save('open',${n.id})">${S.open.has(n.id)?'Hide summary':'AI summary'}</button>`:''}</span><button class="btn ${S.saved.has('n'+n.id)?'on':''}" onclick="save('saved','n${n.id}')">${S.saved.has('n'+n.id)?'Saved':'Save'}</button></div>`;
+  const a=n.alert?`<div class="alert"><b>Industry alert</b><p>${n.title}</p><div class="row"><span class="meta" style="color:inherit">${n.src} · ${n.time}</span><button class="btn" style="color:#fff;border-color:#fff" onclick="save('open',${n.id})">${S.open.has(n.id)?'Hide':'Read summary'}</button></div></div>`:'';
+  return a+`<div class="card">${body}${ai}${act}</div>`}).join('')||'<p class="meta">Nothing here yet. Follow more topics in your profile.</p>'}</div>`;
+}
+function market(){
+ const cats=['Jobs','Equipment','Hire','Software','Services','Training','Tenders'];
+ const l=JOBS.filter(j=>mvis(j)&&(S.cat==='All'||j.c===S.cat)).sort((a,b)=>(b.feat||0)-(a.feat||0));
+ return hdr('Marketplace','Jobs, kit, software, services and tenders')+chips(cats,S.cat,'setCat')+
+ `<div class="wrap">${lform()}${l.map((j,i)=>`<div class="card"><div class="meta">${j.feat?'<span class="tag spons">Featured</span>':''}<span class="tag">${j.c}</span>${j.tag}</div><h3>${j.title}</h3><div class="meta">${j.by} · ${j.loc}</div><div class="row"><span></span><span><button class="btn ${S.saved.has('j'+j.id)?'on':''}" onclick="save('saved','j${j.id}')">Save</button> <button class="btn pri" onclick="toast('Enquiry sent to ${j.by.replace(/'/g,'')}')">${j.c==='Jobs'?'Apply':'Enquire'}</button> <button class="btn" onclick="rep('l',${j.id})">Report</button></span></div>${lnote(j)}</div>`).join('')}</div>`;
+}
+function community(){
+ const cats=['Surveying','Software','AI','Equipment'];
+ const tot=poll.o.reduce((s,x)=>s+x[1],0);
+ return hdr('Community','Ask, answer and compare notes')+chips(cats,S.ccat,'setCC')+
+ `<div class="wrap">${rules()}<div class="card"><input type="text" id="np" placeholder="Ask the community a question" value="${S.draft.replace(/"/g,'&quot;')}" oninput="S.draft=this.value">${S.imgs.length?`<div style="display:flex;gap:8px;overflow-x:auto;margin-top:10px">${S.imgs.map((u,i)=>`<div style="position:relative;flex:none"><img src="${u}" alt="Attached photo ${i+1}" style="width:96px;height:96px;object-fit:cover;border-radius:8px;display:block"><button class="btn" aria-label="Remove photo ${i+1}" style="position:absolute;top:4px;right:4px;padding:0 7px;background:var(--card)" onclick="S.imgs.splice(${i},1);render()">×</button></div>`).join('')}</div>`:''}<div class="meta" style="margin-top:8px">Remove client names and site addresses first. Photo location data is removed automatically.</div><div class="row"><label class="btn" style="cursor:pointer">${S.imgs.length?'Add more ('+S.imgs.length+'/4)':'Add photos'}<input type="file" accept="image/*" multiple hidden onchange="pick(this)"></label><button class="btn pri" onclick="post()">Post question</button></div></div>
+ <div class="card"><div class="meta"><span class="tag">Poll</span>${tot} votes</div><h3>${poll.q}</h3>${poll.o.map((o,i)=>`<div class="bar" onclick="vote(${i})"><i style="width:${poll.voted<0?0:Math.round(o[1]/tot*100)}%"></i><span><b>${o[0]}</b><span>${poll.voted<0?'':Math.round(o[1]/tot*100)+'%'}</span></span></div>`).join('')}<div class="meta" style="margin-top:8px">${poll.voted<0?'Vote to see results. Responses are anonymous.':'Thanks for voting.'}</div></div>
+ ${THREADS.filter(vis).filter(t=>S.ccat==='All'||t.cat===S.ccat).map(tcard).join('')}</div>`;
+}
+function events(){
+ return hdr('Events','Conferences, CPD, webinars and training')+
+ `<div class="wrap">${EVENTS.map((e,i)=>`<div class="card"><div class="date"><b>${e.m}</b><span>${e.d}</span></div><div class="meta">${e.feat?'<span class="tag spons">Featured event</span>':''}<span class="tag">${e.type}</span></div><h3>${e.title}</h3><div class="meta">${e.loc}</div><div class="clr"></div><div class="row"><span></span><span><button class="btn ${S.saved.has('e'+i)?'on':''}" onclick="save('saved','e${i}')">Save</button> <button class="btn ${S.reg.has(i)?'on':'pri'}" onclick="reg(${i})">${S.reg.has(i)?'Registered':'Register'}</button></span></div></div>`).join('')}</div>`;
+}
+function resources(){
+ const q=S.q.trim().toLowerCase();
+ const hits=q?DOCS.filter(d=>(d.t+d.k).toLowerCase().split(/\W+/).some(w=>w&&q.includes(w.slice(0,5)))||q.split(/\W+/).some(w=>w.length>3&&(d.t+d.k).toLowerCase().includes(w))):DOCS;
+ return hdr('Library','Standards, regulations and guides you keep coming back to')+
+ `<div class="wrap"><input type="search" id="rq" placeholder="Ask e.g. cadastral survey plan requirements" value="${S.q.replace(/"/g,'')}" onkeydown="if(event.key==='Enter')ask()"><div class="row"><span class="meta">Natural-language search</span><button class="btn pri" onclick="ask()">Search</button></div>
+ ${S.ans?`<div class="ai"><b>AI summary</b><p>${S.ans}</p><p class="meta" style="margin-top:6px">This is a generated summary, not an authoritative source. Confirm details in the documents below.</p></div>`:''}
+ <h2 style="margin-top:16px">${q?'Sources':'All resources'}</h2>
+ ${hits.map((d,i)=>`<div class="card"><div class="meta"><span class="tag">${d.k}</span>${d.src}</div><h3>${d.t}</h3><div class="meta">${d.sec}</div><div class="row"><span></span><button class="btn ${S.saved.has('r'+d.t)?'on':''}" onclick="save('saved','r${d.t}')">Save to library</button></div></div>`).join('')||'<p class="meta">No matching documents. Try different keywords.</p>'}</div>`;
+}
+function profile(){
+ const p=S.profile;
+ const sv=[...S.saved].map(savedName).filter(Boolean);
+ return hdr(p.name,`${p.role} · ${p.loc}`)+
+ `<div class="wrap">${trust()}<h2>Topics you follow</h2><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">${TOPICS.map(t=>`<button class="chip ${S.follow.has(t)?'on':''}" onclick="fol('${t}')">${t}</button>`).join('')}</div>
+ <div class="card"><h3>Your feed learns from</h3><p class="meta">Profession, location, followed topics, what you read and save, and your community activity.</p></div>
+ <h2>Saved (${sv.length})</h2>${sv.map(s=>`<div class="card" style="padding:10px 14px">${s}</div>`).join('')||'<p class="meta">Nothing saved yet. Tap Save on any article, job, event or document.</p>'}
+ <h2 style="margin-top:16px">Registered events (${S.reg.size})</h2>${[...S.reg].map(i=>`<div class="card" style="padding:10px 14px">${EVENTS[i].title}</div>`).join('')||'<p class="meta">No registrations yet.</p>'}
+ <h2 style="margin-top:16px">Profile</h2><div class="card"><label class="meta">Discipline</label><input type="text" value="${p.role}" onchange="S.profile.role=this.value;render()"><label class="meta" style="display:block;margin-top:8px">Location</label><input type="text" value="${p.loc}" onchange="S.profile.loc=this.value;render()"></div></div>`;
+}
+const setTopic=t=>{S.topic=t;render()},setCat=c=>{S.cat=c;render()},setCC=c=>{S.ccat=c;render()};
+const fol=t=>{save('follow',t)};
+const up=id=>{save('up',id)};
+const reg=i=>{S.reg.has(i)?S.reg.delete(i):(S.reg.add(i),toast('Registered. Reminder added to your calendar.'));render()};
+const vote=i=>{if(poll.voted<0){poll.voted=i;poll.o[i][1]++;render()}};
+S.draft='';S.imgs=[];
+function ph(c,t){return 'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="${c}"/><g fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2"><ellipse cx="200" cy="150" rx="40" ry="28"/><ellipse cx="200" cy="150" rx="90" ry="62"/><ellipse cx="200" cy="150" rx="150" ry="100"/></g><text x="20" y="280" fill="#fff" font-size="18" font-family="sans-serif">${t}</text></svg>`)}
+function gal(a){if(!a||!a.length)return'';const id='g'+Math.random().toString(36).slice(2,7);
+ return `<div style="position:relative;margin-top:8px"><div style="display:flex;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:8px;scrollbar-width:none" onscroll="const b=this.nextElementSibling;if(b)b.textContent=(Math.round(this.scrollLeft/this.clientWidth)+1)+'/${a.length}'">${a.map((u,i)=>`<img src="${u}" alt="Post photo ${i+1} of ${a.length}" style="flex:none;width:100%;max-height:320px;object-fit:cover;scroll-snap-align:center">`).join('')}</div>${a.length>1?`<span style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:1px 8px;border-radius:99px">1/${a.length}</span>`:''}</div>`}
+function commCard(t){return `<div class="card"><div class="meta"><span class="tag">Community</span>${t.by}</div><h3>${t.q}</h3>${gal(t.imgs)}<div class="row"><span class="meta">${t.replies} replies</span><button class="btn" onclick="S.ccat='All';go('community')">Join discussion</button></div></div>`}
+let qid=0;
+const cl=s=>s.replace(/[<>"'`\\]/g,'');
+const isLive=t=>(t.st||'live')==='live';
+const vis=t=>isLive(t)||t.mine;
+const mvis=j=>(j.st||'live')==='live'||j.mine;
+const trusted=()=>S.approved>=2;
+const REASONS=['Spam or promotion','Abusive or harassing','Confidential client or site information','Copyright','Misleading or wrong','Scam or fake listing'];
+function enqueue(k,ref,why){S.queue.push({id:++qid,k,ref,why})}
+function screen(v){if(/https?:|www\.|bit\.ly/i.test(v))return 'Auto-flagged: contains a link';if(/whatsapp|telegram|dm me|free money|buy now/i.test(v))return 'Auto-flagged: off-platform contact or promotion';if(/idiot|stupid|scam artist|moron/i.test(v))return 'Auto-flagged: possible abuse';return ''}
+JOBS.forEach((j,i)=>j.id=i);
+JOBS.push({id:JOBS.length,c:'Equipment',title:'GNSS rover kit, price on request',by:'Unverified seller',loc:'Online',tag:'Contact me',st:'pending'});
+THREADS.push({id:5,cat:'Equipment',q:'Cheap GNSS units, message me on WhatsApp for deals',by:'New user · Reseller',votes:0,replies:0,st:'pending'});
+Object.assign(S,{queue:[],mod:false,rep:null,approved:0,rules:false});
+enqueue('listing',JOBS[JOBS.length-1].id,'New seller: listing checked before going live');
+enqueue('post',5,'Auto-flagged: off-platform contact or promotion');
+enqueue('post',4,'Reported: Misleading or wrong');
+function savedName(x){const k=x[0],v=x.slice(1);return k==='n'?NEWS.find(n=>String(n.id)===v)?.title:k==='j'?JOBS[+v]?.title:k==='e'?EVENTS[+v]?.title:v}
+function tcard(t){
+ const badge=t.st==='pending'?'<div class="meta" style="margin-top:6px"><span class="tag spons">Awaiting review</span>Only you can see this until it is approved.</div>':t.st==='removed'?`<div class="meta" style="margin-top:6px"><span class="tag spons">Removed</span>${t.why}</div>`:'';
+ const acts=t.st==='removed'?(t.appeal?'<span class="meta">Appeal sent</span>':`<button class="btn" onclick="appeal(${t.id})">Appeal decision</button>`):`<button class="btn ${S.up.has(t.id)?'on':''}" onclick="up(${t.id})">Helpful ${t.votes+(S.up.has(t.id)?1:0)}</button>${t.mine?'':` <button class="btn" onclick="rep('p',${t.id})">Report</button>`}`;
+ return `<div class="card"><div class="meta"><span class="tag">${t.cat}</span>${t.by}</div><h3>${t.q}</h3>${t.st==='removed'?'':gal(t.imgs)}<div class="meta" style="margin-top:4px">Community opinion, not professional advice</div><div class="row"><span class="meta">${t.replies} replies</span><span>${acts}</span></div>${badge}</div>`}
+function lnote(j){return j.st==='pending'?'<div class="meta" style="margin-top:6px"><span class="tag spons">Awaiting review</span>Listings from new sellers are checked before they go live.</div>':j.st==='removed'?`<div class="meta" style="margin-top:6px"><span class="tag spons">Removed</span>${j.why}</div>`:''}
+function rules(){return `<div class="card" style="padding:10px 14px"><button class="btn" style="border:0;padding:0" onclick="S.rules=!S.rules;render()">Community rules ${S.rules?'(hide)':'(show)'}</button>${S.rules?`<ul style="margin:8px 0 0 18px;font-size:14px"><li>Be respectful and stay on topic.</li><li>Remove client names, addresses and confidential plans.</li><li>Only post photos you own or have permission to share.</li><li>Sponsored posts must be labelled. No hidden promotion.</li><li>Removed content comes with a reason, and you can appeal.</li></ul>`:''}</div>`}
+function lform(){return `<div class="card"><h3>List an item or job</h3><input type="text" id="lt" placeholder="Title"><div class="row"><select id="lc" style="flex:1;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit">${['Jobs','Equipment','Hire','Software','Services','Training','Tenders'].map(c=>`<option>${c}</option>`).join('')}</select><button class="btn pri" onclick="addL()">Submit for review</button></div><div class="meta" style="margin-top:6px">New sellers' listings are checked before they go live.</div></div>`}
+function addL(){const v=cl($('#lt').value.trim());if(!v){toast('Add a title first');return}const f=screen(v);const j={id:JOBS.length,c:$('#lc').value,title:v,by:S.profile.name,loc:S.profile.loc,tag:'New',mine:1,st:'pending'};JOBS.push(j);enqueue('listing',j.id,f||'New seller: listing checked before going live');S.cat='All';render();toast('Sent for review')}
+function post(){const v=cl(S.draft.trim());if(!v){toast('Write a question first');return}
+ const f=screen(v),hold=f||!trusted();
+ const t={id:Date.now(),cat:'Surveying',q:v,by:S.profile.name+' · '+S.profile.role,votes:0,replies:0,imgs:S.imgs,mine:1,st:hold?'pending':'live'};
+ THREADS.unshift(t);if(hold)enqueue('post',t.id,f||'New member: first posts are checked');
+ S.draft='';S.imgs=[];S.ccat='All';render();toast(hold?'Sent for review before it goes live':'Posted')}
+function appeal(id){const t=THREADS.find(x=>x.id===id);t.appeal=1;enqueue('post',id,'Appeal from author');render();toast('Appeal sent to a moderator')}
+function rep(k,ref){S.rep={k,ref};render()}
+function sheet(){if(!S.rep)return'';return `<div class="scrim" onclick="S.rep=null;render()"><div class="sheet" onclick="event.stopPropagation()"><h3 class="disp">Report this ${S.rep.k==='p'?'post':'listing'}</h3><p class="meta">Choose the closest reason. A moderator will review it.</p>${REASONS.map((r,i)=>`<button class="btn" style="display:block;width:100%;text-align:left;margin-top:8px" onclick="sendRep(${i})">${r}</button>`).join('')}<button class="btn" style="width:100%;margin-top:12px" onclick="S.rep=null;render()">Cancel</button></div></div>`}
+function sendRep(i){const{k,ref}=S.rep;S.rep=null;enqueue(k==='p'?'post':'listing',ref,'Reported: '+REASONS[i]);render();toast('Report sent. Thank you.')}
+function dec(id,a){const it=S.queue.find(x=>String(x.id)===id);if(!it)return;const o=it.k==='post'?THREADS.find(t=>t.id===it.ref):JOBS.find(j=>j.id===it.ref);
+ if(o){if(a==='ok'){if(o.mine&&o.st==='pending'&&it.k==='post')S.approved++;o.st='live'}else{o.st='removed';o.why='Removed for breaching community rules ('+it.why.replace(/^[^:]*:\s*/,'')+'). You can appeal.'}}
+ S.queue=S.queue.filter(x=>!(x.k===it.k&&x.ref===it.ref));render();toast(a==='ok'?'Decision saved':'Content removed')}
+function modq(){return `<h2>Moderation queue (${S.queue.length})</h2>${S.queue.map(it=>{const o=it.k==='post'?THREADS.find(t=>t.id===it.ref):JOBS.find(j=>j.id===it.ref);if(!o)return'';
+ const ok=it.why.startsWith('Reported')?'Keep':it.why.startsWith('Appeal')?'Restore':'Approve';const n=o.imgs&&o.imgs.length?` · ${o.imgs.length} photo(s)`:'';
+ return `<div class="card"><div class="meta"><span class="tag">${it.k==='post'?'Post':'Listing'}</span>${it.why}</div><h3>${it.k==='post'?o.q:o.title}</h3><div class="meta">${o.by}${n}</div><div class="row"><span></span><span><button class="btn pri" onclick="dec('${it.id}','ok')">${ok}</button> <button class="btn" onclick="dec('${it.id}','rm')">Remove</button></span></div></div>`}).join('')||'<p class="meta">Queue is clear.</p>'}`}
+function trust(){return `<div class="card"><h3>Account trust</h3><p class="meta">${trusted()?'Trusted member: posts go live straight away unless automatically flagged.':`New member: your first posts are checked before they go live (${S.approved} of 2 approved).`}</p><div class="row"><span class="meta">Demo: act as a moderator</span><button class="btn ${S.mod?'on':''}" onclick="S.mod=!S.mod;render()">${S.mod?'Moderator view on':'Turn on moderator view'}</button></div></div>${S.mod?modq():''}`}
+function pick(inp){const fs=[...inp.files].slice(0,4-S.imgs.length);inp.value='';if(!fs.length){toast('Maximum 4 photos per post');return}
+ Promise.all(fs.map(f=>new Promise(res=>{if(!f.type.startsWith('image/'))return res(null);const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,1200/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.82))};im.onerror=()=>res(null);im.src=r.result};r.onerror=()=>res(null);r.readAsDataURL(f)}))).then(u=>{const ok=u.filter(Boolean);if(ok.length<u.length)toast('Some files were not images');S.imgs=S.imgs.concat(ok).slice(0,4);render()})}
+function ask(){S.q=$('#rq').value;const q=S.q.toLowerCase();
+ S.ans=!q.trim()?null:q.includes('cadastral')||q.includes('plan')||q.includes('nsw')?'Cadastral plans in NSW must follow current practice guidance and use the digital lodgement format, including the revised metadata fields. Check sections 4 and 7 of the guidance document and the deposited plan checklist.':q.includes('gnss')?'RTK fieldwork relies on a stable base or network corrections, a defined initialisation check and independent verification of fixed positions. See the GNSS field procedures guide.':'Here are the documents that best match your question. Open the sources for the authoritative wording.';
+ render()}
+const V={feed,market,community,events,resources,profile};
+function render(){
+ const y=window.scrollY;
+ $('#app').innerHTML=V[S.tab]()+`<nav>${TABS.map(([k,l])=>`<button class="${S.tab===k?'on':''}" onclick="go('${k}')" aria-label="${l}"><svg viewBox="0 0 24 24">${ICON[k]}</svg>${l}</button>`).join('')}</nav>${sheet()}`;
+ window.scrollTo(0,y);
+}
+function go(t){S.tab=t;render();window.scrollTo(0,0)}
+render();
+</script>
+</body>
+</html>
