@@ -26,3 +26,9 @@ Open `index.html` in a browser. No build step is needed.
 
 ## Content and copyright
 News items must be summarised in original words with a link to the source. See the sources policy (to be added).
+
+## Licence
+Copyright (c) 2026 [OWNER]. All rights reserved. See `LICENSE`.
+
+## Legal
+See `TERMS_OF_USE.md` (draft, pending legal review). Privacy policy and sources policy to follow.
