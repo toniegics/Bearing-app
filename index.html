@@ -170,7 +170,6 @@ const setTopic=t=>{S.topic=t;render()},setCat=c=>{S.cat=c;render()},setCC=c=>{S.
 const fol=t=>{save('follow',t)};
 const up=id=>{save('up',id)};
 const reg=i=>{S.reg.has(i)?S.reg.delete(i):(S.reg.add(i),toast('Registered. Reminder added to your calendar.'));render()};
-const vote=i=>{if(poll.voted<0){poll.voted=i;poll.o[i][1]++;render()}};
 S.draft='';S.imgs=[];
 function ph(c,t){return 'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="${c}"/><g fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2"><ellipse cx="200" cy="150" rx="40" ry="28"/><ellipse cx="200" cy="150" rx="90" ry="62"/><ellipse cx="200" cy="150" rx="150" ry="100"/></g><text x="20" y="280" fill="#fff" font-size="18" font-family="sans-serif">${t}</text></svg>`)}
 function gal(a){if(!a||!a.length)return'';const id='g'+Math.random().toString(36).slice(2,7);
@@ -257,9 +256,52 @@ function ask(){S.q=$('#rq').value;const q=S.q.toLowerCase();
  S.ans=!q.trim()?null:q.includes('cadastral')||q.includes('plan')||q.includes('nsw')?'Cadastral plans in NSW must follow current practice guidance and use the digital lodgement format, including the revised metadata fields. Check sections 4 and 7 of the guidance document and the deposited plan checklist.':q.includes('gnss')?'RTK fieldwork relies on a stable base or network corrections, a defined initialisation check and independent verification of fixed positions. See the GNSS field procedures guide.':'Here are the documents that best match your question. Open the sources for the authoritative wording.';
  render()}
 const V={feed,market,community,events,resources,profile};
+/* ===== Stage 2: live Community, photos, reports, moderation ===== */
+S.posts=[];S.hold=[];S.reports=[];S.poll=null;
+const isStaff=()=>['moderator','editor','admin'].includes(S.prof&&S.prof.role);
+const imgUrl=p=>sb.storage.from('post-images').getPublicUrl(p).data.publicUrl;
+async function loadPosts(){const{data,error}=await sb.from('posts').select('*, profiles(display_name,discipline)').order('created_at',{ascending:false}).limit(60);if(error){toast('Could not load posts');return}S.posts=data}
+async function loadQueue(){if(!isStaff()){S.hold=[];S.reports=[];return}
+ const[a,b]=await Promise.all([sb.from('reports').select('*').eq('resolved',false).order('created_at'),sb.from('posts').select('*, profiles(display_name,discipline)').or('status.eq.pending,and(status.eq.removed,appeal.eq.true)').order('created_at')]);
+ S.reports=a.data||[];S.hold=b.data||[]}
+async function loadPoll(){const{data:p}=await sb.from('polls').select('*').eq('active',true).order('created_at',{ascending:false}).limit(1);if(!p||!p[0]){S.poll=null;return}const q=p[0];
+ const[r,v]=await Promise.all([sb.rpc('poll_results',{p:q.id}),sb.from('poll_votes').select('option_index').eq('poll_id',q.id)]);
+ S.poll={...q,res:r.data||[],voted:v.data&&v.data.length?v.data[0].option_index:-1}}
+async function enter(){await loadProfile();await Promise.all([loadArticles(),loadDrafts(),loadPosts(),loadPoll()]);await loadQueue()}
+async function vote(i){const{error}=await sb.from('poll_votes').insert({poll_id:S.poll.id,option_index:i});if(error){toast('Could not save your vote');return}await loadPoll();render()}
+function community(){const cats=['Surveying','Software','AI','Equipment'],P=S.poll,me=S.user.id;
+ const list=S.posts.filter(p=>(p.status==='live'||p.author_id===me)&&(S.ccat==='All'||p.category===S.ccat));
+ const tot=P?P.res.reduce((s,x)=>s+Number(x.votes),0):0,cnt=i=>{const r=P.res.find(x=>x.option_index===i);return r?Number(r.votes):0},pc=i=>tot?Math.round(cnt(i)/tot*100):0;
+ return hdr('Community','Ask, answer and compare notes')+chips(cats,S.ccat,'setCC')+`<div class="wrap">${rules()}
+ <div class="card"><input type="text" id="np" placeholder="Ask the community a question" maxlength="2000" value="${esc(S.draft)}" oninput="S.draft=this.value">${S.imgs.length?`<div style="display:flex;gap:8px;overflow-x:auto;margin-top:10px">${S.imgs.map((u,i)=>`<div style="position:relative;flex:none"><img src="${u}" alt="Attached photo ${i+1}" style="width:96px;height:96px;object-fit:cover;border-radius:8px;display:block"><button class="btn" aria-label="Remove photo ${i+1}" style="position:absolute;top:4px;right:4px;padding:0 7px;background:var(--card)" onclick="S.imgs.splice(${i},1);render()">×</button></div>`).join('')}</div>`:''}<div class="meta" style="margin-top:8px">Remove client names and site addresses first. Photo location data is removed automatically.</div><div class="row"><label class="btn" style="cursor:pointer">${S.imgs.length?'Add more ('+S.imgs.length+'/4)':'Add photos'}<input type="file" accept="image/*" multiple hidden onchange="pick(this)"></label><button class="btn pri" id="pb" onclick="post()">Post question</button></div></div>
+ ${P?`<div class="card"><div class="meta"><span class="tag">Poll</span>${tot} votes</div><h3>${esc(P.question)}</h3>${P.options.map((o,i)=>`<div class="bar" onclick="vote(${i})"><i style="width:${P.voted<0?0:pc(i)}%"></i><span><b>${esc(o)}</b><span>${P.voted<0?'':pc(i)+'%'}</span></span></div>`).join('')}<div class="meta" style="margin-top:8px">${P.voted<0?'Vote to see results. Responses are anonymous.':'Thanks for voting.'}</div></div>`:''}
+ ${list.map(tcard).join('')||'<p class="meta">No posts yet. Be the first to ask a question.</p>'}</div>`}
+function tcard(t){const mine=t.author_id===S.user.id,by=t.profiles?esc(t.profiles.display_name)+' · '+esc(t.profiles.discipline||'Member'):'Member';
+ const badge=t.status==='pending'?'<div class="meta" style="margin-top:6px"><span class="tag spons">Awaiting review</span>Only you can see this until it is approved.</div>':t.status==='removed'?`<div class="meta" style="margin-top:6px"><span class="tag spons">Removed</span>${esc(t.removal_reason||'Removed for breaching the community rules.')}</div>`:'';
+ const acts=t.status==='removed'?(t.appeal?'<span class="meta">Appeal sent</span>':`<button class="btn" onclick="appeal('${t.id}')">Appeal decision</button>`):(mine?`<button class="btn" onclick="delPost('${t.id}')">Delete</button>`:`<button class="btn" onclick="rep('p','${t.id}')">Report</button>`);
+ return `<div class="card"><div class="meta"><span class="tag">${esc(t.category)}</span>${by} · ${ago(t.created_at)}</div><h3 style="font-weight:600;font-size:16px">${esc(t.body)}</h3>${t.status==='removed'?'':gal((t.image_paths||[]).map(imgUrl))}<div class="meta" style="margin-top:4px">Community opinion, not professional advice</div><div class="row"><span></span><span>${acts}</span></div>${badge}</div>`}
+async function post(){const v=S.draft.trim();if(!v){toast('Write a question first');return}
+ const b=$('#pb');b.disabled=true;b.textContent='Posting...';const paths=[];
+ for(const u of S.imgs){const blob=await (await fetch(u)).blob(),path=S.user.id+'/'+crypto.randomUUID()+'.jpg';const{error}=await sb.storage.from('post-images').upload(path,blob,{contentType:'image/jpeg'});if(error){toast('Photo upload failed: '+error.message);render();return}paths.push(path)}
+ const{data,error}=await sb.from('posts').insert({body:v,category:S.ccat==='All'?'Surveying':S.ccat,image_paths:paths}).select().single();
+ if(error){toast(error.message);render();return}
+ S.draft='';S.imgs=[];await Promise.all([loadPosts(),loadProfile()]);await loadQueue();render();toast(data.status==='live'?'Posted':'Sent for review before it goes live')}
+async function delPost(id){if(!confirm('Delete this post?'))return;const{error}=await sb.from('posts').delete().eq('id',id);if(error){toast(error.message);return}await Promise.all([loadPosts(),loadQueue()]);render()}
+async function appeal(id){const{error}=await sb.rpc('appeal_post',{p:id});if(error){toast(error.message);return}await loadPosts();render();toast('Appeal sent to a moderator')}
+async function sendRep(i){const{k,ref}=S.rep;S.rep=null;if(k!=='p'){render();toast('Reporting listings arrives with the Marketplace update');return}
+ const{error}=await sb.from('reports').insert({target_type:'post',target_id:ref,reason:REASONS[i]});render();toast(error?(error.code==='23505'?'You have already reported this':error.message):'Report sent. Thank you.')}
+async function modPost(id,a){let patch={status:'live',removal_reason:null,appeal:false};
+ if(a==='rm'){const why=prompt('Reason shown to the author:','Breaches the community rules');if(why===null)return;patch={status:'removed',appeal:false,removal_reason:why.trim()||'Breaches the community rules'}}
+ const{error}=await sb.from('posts').update(patch).eq('id',id);if(error){toast(error.message);return}
+ await sb.from('reports').update({resolved:true}).eq('target_type','post').eq('target_id',id);
+ await Promise.all([loadPosts(),loadQueue()]);render();toast(a==='ok'?'Decision saved':'Post removed')}
+function modq(){const items=[],seen=new Set();(S.hold||[]).forEach(p=>{seen.add(p.id);items.push({p,why:p.status==='removed'?'Appeal from author':'Held for review'})});
+ (S.reports||[]).filter(r=>r.target_type==='post').forEach(r=>{const p=S.posts.find(x=>x.id===r.target_id);if(p&&!seen.has(p.id)){seen.add(p.id);items.push({p,why:'Reported: '+r.reason})}});
+ return `<h2>Moderation queue (${items.length})</h2>${items.map(({p,why})=>`<div class="card"><div class="meta"><span class="tag">Post</span>${esc(why)}</div><h3 style="font-size:16px">${esc(p.body)}</h3><div class="meta">${esc(p.profiles?p.profiles.display_name:'Member')}</div>${gal((p.image_paths||[]).map(imgUrl))}<div class="row"><span></span><span><button class="btn pri" onclick="modPost('${p.id}','ok')">${why.startsWith('Reported')?'Keep':why.startsWith('Appeal')?'Restore':'Approve'}</button> <button class="btn" onclick="modPost('${p.id}','rm')">Remove</button></span></div></div>`).join('')||'<p class="meta">Queue is clear.</p>'}`}
+function trust(){const r=(S.prof&&S.prof.role)||'member';return `<div class="card"><h3>Account</h3><p class="meta">${esc(S.user.email)} · ${esc(r)}</p><div class="row"><span class="meta">${trusted()?'Trusted member':'New member: first posts are checked ('+((S.prof&&S.prof.approved_posts)||0)+' of 2 approved).'}</span><button class="btn" onclick="logout()">Log out</button></div></div>${isEd()?edDesk():''}${isStaff()?modq():''}`}
 function render(){
  const y=window.scrollY;
- if(!S.ready){$('#app').innerHTML='<p class="meta" style="padding:24px">Loading...</p>';return}if(!S.user){$('#app').innerHTML=authView();return}$('#app').innerHTML=(['community','market','events','resources'].includes(S.tab)?'<div style="background:var(--hdr);color:#eef2f1;font-size:12px;text-align:center;padding:6px 12px">Sample content while this section is being connected</div>':'')+V[S.tab]()+`<nav>${TABS.map(([k,l])=>`<button class="${S.tab===k?'on':''}" onclick="go('${k}')" aria-label="${l}"><svg viewBox="0 0 24 24">${ICON[k]}</svg>${l}</button>`).join('')}</nav>${sheet()}`;
+ if(!S.ready){$('#app').innerHTML='<p class="meta" style="padding:24px">Loading...</p>';return}if(!S.user){$('#app').innerHTML=authView();return}$('#app').innerHTML=(['market','events','resources'].includes(S.tab)?'<div style="background:var(--hdr);color:#eef2f1;font-size:12px;text-align:center;padding:6px 12px">Sample content while this section is being connected</div>':'')+V[S.tab]()+`<nav>${TABS.map(([k,l])=>`<button class="${S.tab===k?'on':''}" onclick="go('${k}')" aria-label="${l}"><svg viewBox="0 0 24 24">${ICON[k]}</svg>${l}</button>`).join('')}</nav>${sheet()}`;
  window.scrollTo(0,y);
 }
 function go(t){S.tab=t;render();window.scrollTo(0,0)}
