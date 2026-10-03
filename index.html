@@ -123,9 +123,10 @@ function feed(){
  `<div class="wrap">${list.map(n=>{
   const mine=n.topics.filter(t=>S.follow.has(t))[0];
   const body=`<div class="meta">${n.sp?'<span class="tag spons">Sponsored</span>':`<span class="tag">${n.t}</span>`}${n.src} · ${n.time}${mine&&!n.sp?' · because you follow '+mine:''}</div><h3>${n.title}</h3>${gal(n.imgs)}${n.imgs?`<div class="meta" style="margin-top:4px">Image: ${n.src}</div>`:''}`;
-  const ai=n.ai&&S.open.has(n.id)?`<dl class="ai"><dt>What happened</dt><dd>${n.ai.what}</dd><dt>Why it matters</dt><dd>${n.ai.why}</dd><dt>Who is affected</dt><dd>${n.ai.who}</dd><dt>When it takes effect</dt><dd>${n.ai.when}</dd><dt>Original source</dt><dd><a href="${n.url}" target="_blank" rel="noopener noreferrer">${n.src}</a></dd></dl><div class="meta" style="margin-top:6px">AI summary. Check the original source before acting.</div>`:'';
-  const act=`<div class="row"><span>${n.ai?`<button class="btn ${S.open.has(n.id)?'on':''}" onclick="save('open','${n.id}')">${S.open.has(n.id)?'Hide summary':'AI summary'}</button>`:''}</span><button class="btn ${S.saved.has('n'+n.id)?'on':''}" onclick="save('saved','n${n.id}')">${S.saved.has('n'+n.id)?'Saved':'Save'}</button></div>`;
-  const a=n.alert?`<div class="alert"><b>Industry alert</b><p>${n.title}</p><div class="row"><span class="meta" style="color:inherit">${n.src} · ${n.time}</span><button class="btn" style="color:#fff;border-color:#fff" onclick="save('open','${n.id}')">${S.open.has(n.id)?'Hide':'Read summary'}</button></div></div>`:'';
+  const x=n.ai||{},open=S.open.has(n.id),row=(l,v)=>v?`<dt>${l}</dt><dd>${v}</dd>`:'';
+  const ai=open?`<dl class="ai">${row('What happened',x.what)}${row('Why it matters',x.why)}${row('Who is affected',x.who)}${row('When it takes effect',x.when)}</dl>`:'';
+  const act=`<div class="row"><span><button class="btn ${open?'on':''}" onclick="save('open','${n.id}')">${open?'Collapse':'Expand'}</button> <a class="btn" style="text-decoration:none" href="${n.url}" target="_blank" rel="noopener noreferrer">Read the original</a></span><button class="btn ${S.saved.has('n'+n.id)?'on':''}" onclick="save('saved','n${n.id}')">${S.saved.has('n'+n.id)?'Saved':'Save'}</button></div>`;
+  const a=n.alert?`<div class="alert"><b>Industry alert</b><p>${n.title}</p><div class="row"><span class="meta" style="color:inherit">${n.src} · ${n.time}</span><a class="btn" style="color:#fff;border-color:#fff;text-decoration:none" href="${n.url}" target="_blank" rel="noopener noreferrer">Read the original</a></div></div>`:'';
   return a+`<div class="card">${body}${ai}${act}</div>`}).join('')||'<p class="meta">No stories yet. Editors publish new stories here.</p>'}</div>`;
 }
 function market(){
